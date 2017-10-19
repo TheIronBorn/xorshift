@@ -29,7 +29,7 @@ const STATE_SIZE: usize = 2;
 /// Beside passing `BigCrush`, this generator passes the `PractRand` test suite
 /// up to (and included) 16TB, with the exception of binary rank tests,
 /// which fail due to the lowest bit being an LFSR; all other bits pass all
-/// tests. We suggest to use a sign test to extract a random Boolean value.
+/// tests. We suggest to use a sign test (`gen_bool`) to extract a random Boolean value.
 ///
 /// Note that the generator uses a simulated rotate operation, which most C
 /// compilers will turn into a single instruction. In Java, you can use
@@ -100,6 +100,13 @@ impl Rand for Xoroshiro128 {
             *word = other.gen();
         }
         SeedableRng::from_seed(&key[..])
+    }
+}
+
+impl Xoroshiro128 {
+    #[inline]
+    pub fn gen_bool(&mut self) -> bool {
+        self.gen::<u8>() >> 7 == 1
     }
 }
 
