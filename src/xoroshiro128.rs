@@ -53,11 +53,6 @@ pub struct Xoroshiro128([u64; 2]);
 static EMPTY: Xoroshiro128 = Xoroshiro128([0, 0]);
 static JUMP: [u64; 2] = [0xbeac0467eba5facb, 0xd86b048b86aa9922];
 
-#[inline]
-fn rotl(x: u64, k: i32) -> u64 {
-    (x << k) | (x >> (64 - k))
-}
-
 impl Rng for Xoroshiro128 {
     fn next_u32(&mut self) -> u32 {
         self.next_u64() as u32
@@ -70,8 +65,8 @@ impl Rng for Xoroshiro128 {
         let result = s0 + s1;
 
         s1 ^= s0;
-        self.0[0] = (w(rotl(s0.0, 55)) ^ s1 ^ (s1 << 14)).0;
-        self.0[1] = rotl(s1.0, 36);
+        self.0[0] = (w(s0.0.rotate_left(55)) ^ s1 ^ (s1 << 14)).0;
+        self.0[1] = s1.0.rotate_left(36);
 
         result.0
     }
@@ -79,14 +74,12 @@ impl Rng for Xoroshiro128 {
 
 impl<'a> SeedableRng<&'a [u64]> for Xoroshiro128 {
     fn reseed(&mut self, seed: &'a [u64]) {
-        if seed.len() < 2 {
-            panic!("Xoroshiro128 seed needs at least two u64s for seeding.");
-        }
+        assert!(seed.len() >= 2, "Xoroshiro128 seed needs at least two u64s for seeding.");
         self.0[0] = seed[0];
         self.0[1] = seed[1];
     }
 
-    fn from_seed(seed: &'a [u64]) -> Xoroshiro128 {
+    fn from_seed(seed: &'a [u64]) -> Self {
         let mut rng = EMPTY;
         rng.reseed(seed);
         rng
@@ -94,7 +87,7 @@ impl<'a> SeedableRng<&'a [u64]> for Xoroshiro128 {
 }
 
 impl Rand for Xoroshiro128 {
-    fn rand<R: Rng>(other: &mut R) -> Xoroshiro128 {
+    fn rand<R: Rng>(other: &mut R) -> Self {
         let mut key: [u64; STATE_SIZE] = [0; STATE_SIZE];
         for word in &mut key {
             *word = other.gen();
