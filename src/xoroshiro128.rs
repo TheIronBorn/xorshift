@@ -96,8 +96,10 @@ impl<'a> SeedableRng<&'a [u64]> for Xoroshiro128 {
 impl Rand for Xoroshiro128 {
     fn rand<R: Rng>(other: &mut R) -> Xoroshiro128 {
         let mut key: [u64; STATE_SIZE] = [0; STATE_SIZE];
-        for word in &mut key {
-            *word = other.gen();
+        while key.iter().all(|&x| x == 0) {
+            for word in &mut key {
+                *word = other.gen();
+            }
         }
         SeedableRng::from_seed(&key[..])
     }
